@@ -341,10 +341,12 @@ export const login = async (req, res) => {
             });
         }
 
+        // JWT data
         const tokenData = {
             userId: user._id
         };
 
+        // Create JWT token
         const token = jwt.sign(
             tokenData,
             process.env.JWT_SECRET,
@@ -353,6 +355,7 @@ export const login = async (req, res) => {
             }
         );
 
+        // User data sent to frontend
         user = {
             id: user._id,
             fullname: user.fullname,
@@ -362,13 +365,16 @@ export const login = async (req, res) => {
             profile: user.profile
         };
 
+        // Production cookie configuration
+        const isProduction = process.env.NODE_ENV === "production";
+
         return res
             .status(200)
             .cookie("token", token, {
                 maxAge: 1 * 24 * 60 * 60 * 1000,
                 httpOnly: true,
-                sameSite: "strict",
-                secure: false
+                sameSite: isProduction ? "none" : "strict",
+                secure: isProduction
             })
             .json({
                 message: `Welcome back ${user.fullname}`,
@@ -389,10 +395,12 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
     try {
+        const isProduction = process.env.NODE_ENV === "production";
+
         res.clearCookie("token", {
             httpOnly: true,
-            sameSite: "strict",
-            secure: false
+            sameSite: isProduction ? "none" : "strict",
+            secure: isProduction
         });
 
         return res.status(200).json({
@@ -481,7 +489,7 @@ export const updateProfile = async (req, res) => {
         // Save updated user
         await user.save();
 
-        // Send updated user to frontend
+        // Updated user data
         const updatedUser = {
             id: user._id,
             fullname: user.fullname,
